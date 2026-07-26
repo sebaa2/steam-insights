@@ -5,4 +5,9 @@ const api = axios.create({
     timeout: 10000,
 })
 
+export async function searchProfile(input) {
+    const response = await api.get(`/profile/search/${input}`)
+    return response.data
+}
+
 export default api

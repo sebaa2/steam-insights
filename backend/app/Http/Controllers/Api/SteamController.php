@@ -32,4 +32,11 @@ class SteamController extends Controller
             $this->steamService->getPlayerSummaries([$steamId])
         );
     }
+
+    public function search(string $input)
+    {
+        return response()->json(
+            $this->steamService->searchProfile($input)
+        );
+    }
 }
