@@ -10,4 +10,13 @@ export async function searchProfile(input) {
     return response.data
 }
 
+export async function getOwnedGames(steamId) {
+    const response = await api.get(`/profile/${steamId}/games`)
+    return response.data
+}
+
+export async function getDashboard(input) {
+    const response = await api.get(`/dashboard/${input}`)
+    return response.data
+}
 export default api
