@@ -10,3 +10,4 @@ Route::get('/profile/search/{input}',[SteamController::class, 'search']);
 Route::get('/profile/{steamId}/games',[SteamController::class, 'games']);
 Route::get('/dashboard/{input}',[SteamController::class, 'dashboard']);
 
+Route::get('/compare/{player1}/{player2}',[SteamController::class, 'compare']);
