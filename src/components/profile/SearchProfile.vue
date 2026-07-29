@@ -11,6 +11,7 @@ import HistoryList from '@/components/history/HistoryList.vue'
 import { getHistory, saveHistory } from '@/services/historyService'
 import LoadingOverlay from '@/components/common/LoadingOverlay.vue'
 import DashboardCharts from '@/components/dashboard/DashboardCharts.vue'
+import { useProfileStore } from '@/stores/profileStore'
 
 import { getDashboard } from '@/services/steamService'
 
@@ -19,6 +20,7 @@ const search = ref('')
 const dashboard = ref(null)
 const loading = ref(false)
 const history = ref(getHistory())
+const profileStore = useProfileStore()
 
 const handleSearch = async (value = search.value) => {
   loading.value = true
@@ -31,8 +33,12 @@ const handleSearch = async (value = search.value) => {
     history.value = getHistory()
 
     // Guardar steamId para usarlo en otras páginas
-    if (dashboard.value?.profile?.steamId) {
-      sessionStorage.setItem('steamId', dashboard.value.profile.steamId)
+    if (dashboard.value?.profile) {
+
+      profileStore.setProfile(
+        dashboard.value.profile
+      )
+
     }
   } catch (error) {
     console.error(error)

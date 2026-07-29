@@ -1,12 +1,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+
 import { getOwnedGames } from '@/services/steamService'
+import { useProfileStore } from '@/stores/profileStore'
 
 const route = useRoute()
+const profileStore = useProfileStore()
+
 const steamId = ref(route.params.steamId || '')
 const games = ref([])
 const loading = ref(false)
+
 const searchQuery = ref('')
 const sortBy = ref('hoursPlayed')
 const filterUnplayed = ref(false)
@@ -15,30 +20,31 @@ const filterUnplayed = ref(false)
 const filteredGames = computed(() => {
   let result = [...games.value]
 
-  // Búsqueda por nombre
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
+
     result = result.filter(game =>
       game.name.toLowerCase().includes(query)
     )
   }
 
-  // Filtrar no jugados
   if (filterUnplayed.value) {
     result = result.filter(game => game.hoursPlayed > 0)
   }
 
-  // Ordenar
   result.sort((a, b) => {
     if (sortBy.value === 'hoursPlayed') {
       return b.hoursPlayed - a.hoursPlayed
     }
+
     if (sortBy.value === 'name') {
       return a.name.localeCompare(b.name)
     }
+
     if (sortBy.value === 'minutesPlayed') {
       return b.minutesPlayed - a.minutesPlayed
     }
+
     return 0
   })
 
@@ -47,145 +53,214 @@ const filteredGames = computed(() => {
 
 // Estadísticas
 const stats = computed(() => {
-  if (!games.value.length) return { total: 0, played: 0, unplayed: 0 }
+  if (!games.value.length) {
+    return {
+      total: 0,
+      played: 0,
+      unplayed: 0
+    }
+  }
 
   const total = games.value.length
-  const unplayed = games.value.filter(g => g.hoursPlayed === 0).length
-  const played = total - unplayed
 
-  return { total, played, unplayed }
+  const unplayed = games.value.filter(
+    game => game.hoursPlayed === 0
+  ).length
+
+  return {
+    total,
+    played: total - unplayed,
+    unplayed
+  }
 })
 
 // Cargar juegos
 const loadGames = async () => {
+
   if (!steamId.value) {
-    // Intentar obtener el steamId del sessionStorage o del store
-    const savedSteamId = sessionStorage.getItem('steamId')
-    if (savedSteamId) {
-      steamId.value = savedSteamId
-    } else {
+
+    steamId.value = profileStore.profile?.steamId
+
+    if (!steamId.value) {
       return
     }
+
   }
 
   loading.value = true
+
   try {
+
     const response = await getOwnedGames(steamId.value)
+
     games.value = response.library.games || []
+
   } catch (error) {
+
     console.error('Error al cargar juegos:', error)
+
   } finally {
+
     loading.value = false
+
   }
+
 }
 
 // Formatear horas
 const formatHours = (hours) => {
+
   if (hours >= 1000) {
     return `${(hours / 1000).toFixed(1)}k h`
   }
+
   if (hours === 0) {
     return 'Sin jugar'
   }
+
   if (hours < 1) {
     return `${Math.round(hours * 60)} min`
   }
+
   return `${hours} h`
+
 }
 
-// Manejar error de imagen
+// Imagen no disponible
 const handleImageError = (event) => {
+
   event.target.src = '/images/placeholder-game.jpg'
+
 }
 
+// Abrir Steam
 const openGame = (id) => {
+
   window.open(
     `https://store.steampowered.com/app/${id}`,
     '_blank'
   )
-}
-// Volver al dashboard
-const goBack = () => {
-  window.history.back()
+
 }
 
-// Guardar steamId para futuras visitas
-const saveSteamId = (id) => {
-  localStorage.setItem('steamId', id)
+// Volver
+const goBack = () => {
+
+  window.history.back()
+
 }
 
 onMounted(() => {
+
   if (route.params.steamId) {
     steamId.value = route.params.steamId
-    saveSteamId(route.params.steamId)
   }
+
   loadGames()
+
 })
 </script>
 
 <template>
   <div class="games-view">
+
     <div class="view-header">
+
       <button class="back-btn" @click="goBack">
         ← Volver
       </button>
+
       <h1>Biblioteca de juegos</h1>
+
       <span class="total-games">
         {{ stats.total }} juegos
       </span>
+
     </div>
 
-    <!-- Barra de herramientas -->
     <div class="toolbar">
+
       <div class="search-box">
-        <input v-model="searchQuery" type="text" placeholder="🔍 Buscar juegos..." class="search-input" />
+
+        <input v-model="searchQuery" type="text" placeholder="🔍 Buscar juegos..." class="search-input">
+
       </div>
 
       <div class="filters">
+
         <select v-model="sortBy" class="filter-select">
-          <option value="hoursPlayed">Más jugados</option>
-          <option value="name">Nombre</option>
-          <option value="minutesPlayed">Tiempo total</option>
+          <option value="hoursPlayed">
+            Más jugados
+          </option>
+
+          <option value="name">
+            Nombre
+          </option>
+
+          <option value="minutesPlayed">
+            Tiempo total
+          </option>
+
         </select>
 
         <label class="filter-checkbox">
-          <input v-model="filterUnplayed" type="checkbox" />
+
+          <input v-model="filterUnplayed" type="checkbox">
+
           Solo jugados
+
         </label>
+
       </div>
+
     </div>
 
-    <!-- Loading -->
     <div v-if="loading" class="loading">
+
       <p>Cargando juegos...</p>
+
     </div>
 
-    <!-- Grid de juegos -->
     <div v-else-if="filteredGames.length" class="games-grid">
+
       <div v-for="game in filteredGames" :key="game.id" class="game-card" @click="openGame(game.id)">
-        <img :src="game.image" :alt="game.name" class="game-image" @error="handleImageError" loading="lazy" />
+
+        <img :src="game.image" :alt="game.name" class="game-image" @error="handleImageError" loading="lazy">
 
         <div class="game-details">
-          <h3 class="game-name">{{ game.name }}</h3>
+
+          <h3 class="game-name">
+            {{ game.name }}
+          </h3>
+
           <p class="game-hours">
             {{ formatHours(game.hoursPlayed) }}
           </p>
+
           <div class="progress-bar">
+
             <div class="progress-fill" :style="{
               width: Math.min((game.hoursPlayed / 100) * 100, 100) + '%'
-            }"></div>
+            }" />
+
           </div>
+
         </div>
+
       </div>
+
     </div>
 
-    <!-- Empty state -->
     <div v-else class="empty-state">
+
       <p>No se encontraron juegos</p>
+
       <p class="empty-hint">
         {{ searchQuery ? 'Prueba con otra búsqueda' : 'No hay juegos en esta biblioteca' }}
       </p>
+
     </div>
+
   </div>
 </template>
 

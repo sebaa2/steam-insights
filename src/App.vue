@@ -1,10 +1,23 @@
 <script setup>
-import AppHeader from '@/components/layout/AppHeader.vue'
+import { onMounted } from 'vue'
+
+import AppNavbar from '@/components/layout/AppNavbar.vue'
+
+import { useProfileStore } from '@/stores/profileStore'
+
+const profileStore = useProfileStore()
+
+onMounted(() => {
+
+  profileStore.loadProfile()
+
+})
 </script>
 
-
-
 <template>
-  <AppHeader />
+
+  <AppNavbar />
+
   <RouterView />
+
 </template>
