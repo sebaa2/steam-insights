@@ -9,19 +9,8 @@ import CompareProfileCard from '@/components/compare/CompareProfileCard.vue'
 import VsDivider from '@/components/compare/VsDivider.vue'
 import CompareBar from '@/components/compare/CompareBar.vue'
 import { getDashboard } from '@/services/steamService'
-import { useCompareFormatters } from '@/composables/useCompareFormatters'
-import { useCompareWinner } from '@/composables/useCompareWinner'
-import './CompareView.css'
-import { useCommonGames } from '@/composables/useCommonGames'
-import { useTopGamesComparison } from '@/composables/useTopGamesComparison'
-import CompareTopGames from '@/components/compare/CompareTopGames.vue'
-import CompareCommonGames from '@/components/compare/CompareCommonGames.vue'
 
 const router = useRouter()
-const { formatHoursDiff } = useCompareFormatters()
-const { getOverallWinner } = useCompareWinner()
-
-// State
 const profileOne = ref('')
 const profileTwo = ref('')
 const loading = ref(false)
@@ -29,59 +18,18 @@ const leftProfile = ref(null)
 const rightProfile = ref(null)
 const error = ref('')
 
-// Computed
 const hasComparison = computed(() => leftProfile.value && rightProfile.value)
 
 const comparisonData = computed(() => {
     if (!hasComparison.value) return null
     const l = leftProfile.value
     const r = rightProfile.value
-
     return {
-        left: {
-            name: l.profile.name,
-            avatar: l.profile.avatar,
-            steamId: l.profile.steamId,
-            games: l.library.totalGames,
-            hours: l.stats.totalHours,
-            averageHours: l.stats.averageHours,
-            completion: l.stats.completion,
-            neverPlayed: l.stats.neverPlayed
-        },
-        right: {
-            name: r.profile.name,
-            avatar: r.profile.avatar,
-            steamId: r.profile.steamId,
-            games: r.library.totalGames,
-            hours: r.stats.totalHours,
-            averageHours: r.stats.averageHours,
-            completion: r.stats.completion,
-            neverPlayed: r.stats.neverPlayed
-        }
+        left: { name: l.profile.name, avatar: l.profile.avatar, games: l.library.totalGames, hours: l.stats.totalHours, steamId: l.profile.steamId },
+        right: { name: r.profile.name, avatar: r.profile.avatar, games: r.library.totalGames, hours: r.stats.totalHours, steamId: r.profile.steamId }
     }
 })
 
-const winnerSummary = computed(() => {
-    if (!hasComparison.value) return null
-    return getOverallWinner(leftProfile.value, rightProfile.value)
-})
-
-const {
-    commonGames,
-    similarity
-} = useCommonGames(
-    leftProfile,
-    rightProfile
-)
-
-const {
-    topGames
-} = useTopGamesComparison(
-    leftProfile,
-    rightProfile
-)
-
-// Methods
 const compare = async () => {
     if (!profileOne.value || !profileTwo.value) {
         error.value = 'Por favor ingresa ambos SteamIDs'
@@ -108,28 +56,30 @@ const compare = async () => {
 
 const goBack = () => router.push('/')
 
-// Métricas para las barras
-const metrics = computed(() => {
-    if (!hasComparison.value) return []
-    return [
-        { label: 'Total juegos', left: leftProfile.value.library.totalGames, right: rightProfile.value.library.totalGames },
-        { label: 'Horas jugadas', left: leftProfile.value.stats.totalHours, right: rightProfile.value.stats.totalHours },
-        { label: 'Promedio horas', left: leftProfile.value.stats.averageHours, right: rightProfile.value.stats.averageHours },
-        { label: 'Sin jugar', left: leftProfile.value.stats.neverPlayed, right: rightProfile.value.stats.neverPlayed, reversed: true },
-        { label: 'Completitud', left: leftProfile.value.stats.completion, right: rightProfile.value.stats.completion }
-    ]
-})
-const topGamesComparison = computed(() => {
-    if (!hasComparison.value) return []
+// Formateadores
+const formatHours = (hours) => {
+    if (!hours || hours === 0) return '0'
+    if (hours >= 1000) return `${(hours / 1000).toFixed(1)}k`
+    if (hours >= 10) return `${Math.round(hours)}`
+    return `${Math.round(hours * 10) / 10}`
+}
 
-    const leftTop = leftProfile.value.stats.topFive || []
-    const rightTop = rightProfile.value.stats.topFive || []
+const formatHoursWithUnit = (hours) => {
+    if (!hours || hours === 0) return '0h'
+    if (hours >= 1000) return `${(hours / 1000).toFixed(1)}k h`
+    if (hours >= 10) return `${Math.round(hours)} h`
+    return `${Math.round(hours * 10) / 10} h`
+}
 
-    return leftTop.map(leftGame => ({
-        left: leftGame,
-        right: rightTop.find(game => game.id === leftGame.id) || null
-    }))
-})
+const formatHoursDiff = (left, right) => {
+    const diff = left - right
+    if (diff === 0) return 'Empate'
+    const absDiff = Math.abs(diff)
+    let formatted = absDiff >= 1000 ? `${(absDiff / 1000).toFixed(1)}k` :
+        absDiff >= 10 ? `${Math.round(absDiff)}` :
+            `${Math.round(absDiff * 10) / 10}`
+    return diff > 0 ? `+${formatted} h` : `-${formatted} h`
+}
 </script>
 
 <template>
@@ -166,54 +116,287 @@ const topGamesComparison = computed(() => {
 
         <!-- Resultados -->
         <div v-if="hasComparison && comparisonData" class="comparison-results">
-            <!-- Banner del ganador -->
-            <div v-if="winnerSummary" class="winner-banner" :class="{
-                'winner-left': winnerSummary.winner === 'left',
-                'winner-right': winnerSummary.winner === 'right',
-                'winner-tie': winnerSummary.winner === 'tie'
-            }">
-                <template v-if="winnerSummary.winner === 'left'">
-                    🏆 <strong>{{ winnerSummary.name }}</strong> gana la comparación
-                    ({{ winnerSummary.leftWins }} - {{ winnerSummary.rightWins }})
-                </template>
-                <template v-else-if="winnerSummary.winner === 'right'">
-                    🏆 <strong>{{ winnerSummary.name }}</strong> gana la comparación
-                    ({{ winnerSummary.rightWins }} - {{ winnerSummary.leftWins }})
-                </template>
-                <template v-else>
-                    🤝 ¡Empate técnico! ({{ winnerSummary.leftWins }} - {{ winnerSummary.rightWins }})
-                </template>
-            </div>
-            <CompareTopGames :games="topGamesComparison" :left-name="comparisonData.left.name"
-                :right-name="comparisonData.right.name" />
-            <!-- Perfiles -->
             <div class="profile-vs-container">
                 <CompareProfileCard :profile="comparisonData.left" side="left" />
                 <VsDivider />
                 <CompareProfileCard :profile="comparisonData.right" side="right" />
             </div>
 
-            <!-- Comparativa visual -->
-            <div class="visual-comparison">
-                <h3 class="section-title">📊 Comparativa visual</h3>
-                <div class="visual-grid">
-                    <CompareBar v-for="metric in metrics" :key="metric.label" :label="metric.label"
-                        :leftValue="metric.left" :rightValue="metric.right" :isReversed="metric.reversed || false"
-                        colorLeft="#66c0f4" colorRight="#ff6b6b" />
+            <div class="detailed-comparison">
+                <h3>📊 Comparación detallada</h3>
+                <div class="comparison-grid">
+                    <CompareBar label="🎮 Juegos en biblioteca" :left-value="comparisonData.left.games"
+                        :right-value="comparisonData.right.games" />
+                    <CompareBar label="⏱️ Horas totales" :left-value="comparisonData.left.hours"
+                        :right-value="comparisonData.right.hours"
+                        :left-label="formatHoursWithUnit(comparisonData.left.hours)"
+                        :right-label="formatHoursWithUnit(comparisonData.right.hours)" :format-diff="formatHoursDiff"
+                        color-left="#66c0f4" color-right="#ff6b6b" />
+                </div>
+
+                <div class="winner-summary">
+                    <div class="winner-card" :class="{ tie: comparisonData.left.games === comparisonData.right.games }">
+                        <template v-if="comparisonData.left.games > comparisonData.right.games">
+                            🏆 <strong>{{ comparisonData.left.name }}</strong> tiene más juegos
+                        </template>
+                        <template v-else-if="comparisonData.right.games > comparisonData.left.games">
+                            🏆 <strong>{{ comparisonData.right.name }}</strong> tiene más juegos
+                        </template>
+                        <template v-else>🤝 ¡Empate en juegos!</template>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tabla detallada -->
             <CompareStats v-if="leftProfile && rightProfile" :left="leftProfile" :right="rightProfile" />
         </div>
 
         <!-- Empty State -->
         <div v-else-if="!loading && !hasComparison" class="empty-state">
-            <div class="empty-icon">🎮</div>
             <p class="empty-title">Listo para comparar</p>
             <p class="empty-hint">Ingresa dos perfiles de Steam y haz clic en "Comparar perfiles"</p>
             <p class="empty-hint-small">Puedes usar SteamID, URL personalizada o enlace de perfil</p>
         </div>
-        <!--   <CompareCommonGames :games="commonGames" :similarity="similarity" /> -->
     </div>
 </template>
+
+<style scoped>
+.compare-view {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--steam-border);
+}
+
+.back-btn {
+    padding: 0.5rem 1.25rem;
+    background: var(--steam-surface);
+    color: var(--steam-text);
+    border: 1px solid var(--steam-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.back-btn:hover {
+    background: #2a3f52;
+    transform: translateX(-2px);
+    border-color: var(--steam-primary);
+}
+
+.view-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--steam-text);
+}
+
+.header-hint {
+    color: var(--steam-text-secondary);
+    font-size: 0.95rem;
+}
+
+.compare-card {
+    background: var(--steam-surface);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid var(--steam-border);
+}
+
+.compare-inputs {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.input-label {
+    color: var(--steam-text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.vs-badge {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #66c0f4;
+    padding: 0 0.5rem;
+    align-self: center;
+    margin-bottom: 0.25rem;
+}
+
+.compare-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loading-text {
+    color: var(--steam-text-secondary);
+    font-size: 0.9rem;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.error-message {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid #dc3545;
+    border-radius: 8px;
+    color: #ff6b6b;
+}
+
+.comparison-results {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.profile-vs-container {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    background: var(--steam-surface);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid var(--steam-border);
+}
+
+.detailed-comparison {
+    background: var(--steam-surface);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid var(--steam-border);
+}
+
+.detailed-comparison h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--steam-text);
+}
+
+.comparison-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.winner-summary {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--steam-border);
+}
+
+.winner-card {
+    padding: 1rem 1.5rem;
+    background: rgba(102, 192, 244, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(102, 192, 244, 0.2);
+    text-align: center;
+    color: var(--steam-text);
+}
+
+.winner-card.tie {
+    background: rgba(255, 217, 61, 0.1);
+    border-color: rgba(255, 217, 61, 0.2);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--steam-surface);
+    border-radius: 12px;
+    border: 1px dashed var(--steam-border);
+}
+
+.empty-title {
+    color: var(--steam-text);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+}
+
+.empty-hint {
+    color: var(--steam-text-secondary);
+    font-size: 1rem;
+    margin: 0;
+}
+
+.empty-hint-small {
+    color: var(--steam-text-secondary);
+    font-size: 0.85rem;
+    margin: 0.5rem 0 0 0;
+    opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+    .compare-inputs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .vs-badge {
+        align-self: center;
+        padding: 0.5rem 0;
+    }
+
+    .profile-vs-container {
+        flex-direction: column;
+        align-items: center;
+        padding: 1.5rem;
+    }
+
+    .profile-card-compare {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .view-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-hint {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .compare-card {
+        padding: 1rem;
+    }
+
+    .detailed-comparison {
+        padding: 1rem;
+    }
+}
+</style>

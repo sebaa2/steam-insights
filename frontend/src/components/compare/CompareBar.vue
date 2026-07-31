@@ -1,5 +1,6 @@
+<!-- src/components/compare/CompareBar.vue -->
 <script setup>
-const props = defineProps({
+defineProps({
     label: {
         type: String,
         required: true
@@ -31,50 +32,18 @@ const props = defineProps({
     colorRight: {
         type: String,
         default: '#ff6b6b'
-    },
-    isReversed: {
-        type: Boolean,
-        default: false
     }
 })
 
 const getWinner = (left, right) => {
-    const l = Number(left) || 0
-    const r = Number(right) || 0
-    if (l === r) return 'empate'
-    if (props.isReversed) {
-        return l < r ? 'left' : 'right'
-    }
-    return l > r ? 'left' : 'right'
+    if (left === right) return 'empate'
+    return left > right ? 'left' : 'right'
 }
 
 const getDiff = (left, right) => {
-    const l = Number(left) || 0
-    const r = Number(right) || 0
-    const diff = l - r
-
+    const diff = left - right
     if (diff === 0) return 'Empate'
-
-    const absDiff = Math.abs(diff)
-    let formatted
-
-    if (absDiff >= 1000) {
-        formatted = `${(absDiff / 1000).toFixed(1)}k`
-    } else if (absDiff >= 10) {
-        formatted = `${Math.round(absDiff)}`
-    } else {
-        formatted = `${Math.round(absDiff * 10) / 10}`
-    }
-
-    const sign = diff > 0 ? '+' : '-'
-    return `${sign}${formatted}`
-}
-
-const formatValue = (value) => {
-    const num = Number(value) || 0
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`
-    if (num >= 10) return `${Math.round(num)}`
-    return `${Math.round(num * 10) / 10}`
+    return diff > 0 ? `+${Math.abs(diff)}` : `-${Math.abs(diff)}`
 }
 </script>
 
@@ -84,18 +53,18 @@ const formatValue = (value) => {
         <div class="comparison-bars">
             <div class="bar-container">
                 <div class="bar-left" :style="{
-                    width: `${(Number(leftValue) / Math.max(Number(leftValue) || 1, Number(rightValue) || 1)) * 100}%`,
+                    width: `${(leftValue / Math.max(leftValue, rightValue)) * 100}%`,
                     backgroundColor: colorLeft
                 }">
-                    {{ leftLabel || formatValue(leftValue) }}
+                    {{ leftLabel || leftValue }}
                 </div>
             </div>
             <div class="bar-container">
                 <div class="bar-right" :style="{
-                    width: `${(Number(rightValue) / Math.max(Number(leftValue) || 1, Number(rightValue) || 1)) * 100}%`,
+                    width: `${(rightValue / Math.max(leftValue, rightValue)) * 100}%`,
                     backgroundColor: colorRight
                 }">
-                    {{ rightLabel || formatValue(rightValue) }}
+                    {{ rightLabel || rightValue }}
                 </div>
             </div>
         </div>
