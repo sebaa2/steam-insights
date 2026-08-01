@@ -1,0 +1,77 @@
+/* src/styles/views/games-view.css */
+.games-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.games-grid {
+  margin-top: 2rem;
+}
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.back-btn {
+  padding: 0.5rem 1.25rem;
+  background: #2a3f52;
+  color: #e0e0e0;
+  border: 1px solid #2a3f52;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background: #3a5a7a;
+}
+
+.reload-btn {
+  padding: 0.5rem 1.25rem;
+  background: #66c0f4;
+  color: #1b2838;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.reload-btn:hover {
+  background: #8bc9f5;
+  transform: scale(1.05);
+}
+
+.total-games {
+  color: #8b9aab;
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .games-view {
+    padding: 1rem;
+  }
+
+  .games-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .games-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+}

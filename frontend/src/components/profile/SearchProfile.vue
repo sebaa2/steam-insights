@@ -29,16 +29,10 @@ const handleSearch = async (value = search.value) => {
     dashboard.value = await getDashboard(value)
 
     saveHistory(dashboard.value.profile)
-
     history.value = getHistory()
 
-    // Guardar steamId para usarlo en otras páginas
     if (dashboard.value?.profile) {
-
-      profileStore.setProfile(
-        dashboard.value.profile
-      )
-
+      profileStore.setProfile(dashboard.value.profile)
     }
   } catch (error) {
     console.error(error)
@@ -47,10 +41,16 @@ const handleSearch = async (value = search.value) => {
     loading.value = false
   }
 }
+
+// Navegar a la vista completa de juegos
+const goToAllGames = (steamId) => {
+  if (steamId) {
+    router.push(`/games/${steamId}`)
+  }
+}
 </script>
 
 <template>
-
   <LoadingOverlay :show="loading" />
 
   <div class="search-card">
@@ -62,10 +62,11 @@ const handleSearch = async (value = search.value) => {
     <DashboardCharts v-if="dashboard?.stats" :stats="dashboard.stats" />
 
     <section v-if="dashboard?.library" class="library-section">
-      <!-- Mostrar solo los primeros 3 juegos con botón "Ver todos" -->
-      <GamesList :games="dashboard.stats.topFive" :total-games="dashboard.library.totalGames"
-        title="Top 5 juegos más jugados" :show-view-all-button="true" :steam-id="dashboard.profile.steamId" />
+      <GamesList :games="dashboard.stats.topFive || []" :total-games="dashboard.library.totalGames"
+        title="Top 5 juegos más jugados" :show-view-all-button="true" :steam-id="dashboard.profile?.steamId"
+        @view-all="goToAllGames(dashboard.profile?.steamId)" />
     </section>
+
     <HistoryList :history="history" @select="handleSearch" />
   </div>
 </template>
