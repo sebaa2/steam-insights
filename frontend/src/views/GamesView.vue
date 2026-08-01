@@ -1,5 +1,6 @@
 <!-- src/views/GamesView.vue -->
 <script setup>
+import { useRouter } from 'vue-router'
 import { useGames } from '@/composables/useGames'
 import { usePagination } from '@/composables/usePagination'
 
@@ -12,6 +13,8 @@ import GamesPagination from '@/components/games/GamesPagination.vue'
 
 import { useGameFilters } from '@/composables/useGameFilters'
 import GameFilters from '@/components/games/GameFilters.vue'
+
+const router = useRouter()
 
 const {
   games,
@@ -36,8 +39,16 @@ const {
   goToPage
 } = usePagination(filteredGames, 20)
 
-</script>
+// Función para manejar la navegación a logros
+const handleAchievements = (game) => {
+  console.log('🏆 Abriendo logros para:', game.name, 'App ID:', game.id)
+  router.push({
+    name: 'achievements',
+    params: { appId: game.id }
+  })
+}
 
+</script>
 
 <template>
   <div class="games-view">
@@ -84,7 +95,8 @@ const {
 
       <div class="games-grid">
 
-        <GameCard v-for="game in paginatedItems" :key="game.id" :game="game" @open="openGame" />
+        <GameCard v-for="game in paginatedItems" :key="game.id" :game="game" @open="openGame"
+          @achievements="handleAchievements" />
 
       </div>
 

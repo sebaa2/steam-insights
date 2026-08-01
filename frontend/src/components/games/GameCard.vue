@@ -1,18 +1,7 @@
 <!-- src/components/games/GameCard.vue -->
-<template>
-    <div class="game-card" @click="openGame">
-        <img :src="game.image" :alt="game.name" class="game-image" @error="handleImageError">
-        <div class="game-details">
-            <h3 class="game-name">{{ game.name }}</h3>
-            <p class="game-hours">{{ formatHours(game.hoursPlayed) }}</p>
-            <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: progressWidth + '%' }" />
-            </div>
-        </div>
-    </div>
-</template>
-
 <script setup>
+import GameActions from './GameActions.vue'
+
 const props = defineProps({
     game: {
         type: Object,
@@ -20,10 +9,14 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['open'])
+const emit = defineEmits(['open', 'achievements'])
 
 const openGame = () => {
     emit('open', props.game.id)
+}
+
+const openAchievements = (game) => {
+    emit('achievements', game)
 }
 
 const formatHours = (hours) => {
@@ -39,6 +32,22 @@ const handleImageError = (e) => {
 const progressWidth = Math.min((props.game.hoursPlayed / 100) * 100, 100)
 </script>
 
+<template>
+    <div class="game-card">
+        <div class="image-container">
+            <img :src="game.image" :alt="game.name" class="game-image" @error="handleImageError">
+            <GameActions :game="game" @achievements="openAchievements" />
+        </div>
+        <div class="game-details" @click="openGame">
+            <h3 class="game-name">{{ game.name }}</h3>
+            <p class="game-hours">{{ formatHours(game.hoursPlayed) }}</p>
+            <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: progressWidth + '%' }" />
+            </div>
+        </div>
+    </div>
+</template>
+
 <style scoped>
 .game-card {
     background: #1a2a3a;
@@ -52,6 +61,11 @@ const progressWidth = Math.min((props.game.hoursPlayed / 100) * 100, 100)
 .game-card:hover {
     transform: translateY(-4px);
     border-color: #66c0f4;
+}
+
+.image-container {
+    position: relative;
+    overflow: hidden;
 }
 
 .game-image {
@@ -93,5 +107,9 @@ const progressWidth = Math.min((props.game.hoursPlayed / 100) * 100, 100)
     height: 100%;
     background: linear-gradient(90deg, #66c0f4, #1a9fff);
     transition: width 0.3s ease;
+}
+
+.image-container:hover .game-image {
+    transform: scale(1.05);
 }
 </style>

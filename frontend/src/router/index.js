@@ -30,6 +30,11 @@ const router = createRouter({
       props: true, // Permite pasar el steamId como prop
     },
     {
+      path: '/achievements/:appId',
+      name: 'achievements',
+      component: () => import('@/views/AchievementsView.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: NotFoundView,

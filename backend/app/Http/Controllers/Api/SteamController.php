@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\Steam\SteamGamesService;
 use App\Services\Steam\SteamProfileService;
+use App\Services\Steam\SteamAchievementService;
 use Illuminate\Http\JsonResponse;
 use App\Services\Steam\SteamStatsService;
 
@@ -13,7 +14,8 @@ class SteamController extends Controller
     public function __construct(
         private SteamProfileService $profileService,
         private SteamGamesService $gamesService,
-        private SteamStatsService $statsService
+        private SteamStatsService $statsService,
+        private SteamAchievementService $achievementService
     ) {
     }
 
@@ -166,6 +168,28 @@ class SteamController extends Controller
             ],
 
         ]);
+    }
+
+    /**
+     * Obtener logros de un juego
+     */
+    public function achievements(string $appId): JsonResponse
+    {
+        $steamId = request()->query('steamId');
+
+        return response()->json(
+            $this->achievementService->getGameAchievements($appId, $steamId)
+        );
+    }
+
+    /**
+     * Obtener estadísticas de logros del usuario
+     */
+    public function achievementStats(string $steamId): JsonResponse
+    {
+        return response()->json(
+            $this->achievementService->getUserAchievementStats($steamId)
+        );
     }
 
 }
