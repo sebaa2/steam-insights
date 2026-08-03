@@ -39,9 +39,6 @@ const goToLibrary = () => {
 
       <p>Miembro desde: {{ formatDate(profile.createdAt) }}</p>
 
-      <button class="library-btn" @click="goToLibrary">
-        Ver biblioteca →
-      </button>
     </div>
   </div>
 </template>

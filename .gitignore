@@ -34,3 +34,6 @@ frontend/src/components/achievements/*.debug.vue
 **/DebugMenu.vue
 **/*.debug.vue
 **/*.debug.js
+
+#worktree
+frontend.worktrees/

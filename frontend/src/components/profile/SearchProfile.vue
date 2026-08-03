@@ -31,8 +31,13 @@ const handleSearch = async (value = search.value) => {
     saveHistory(dashboard.value.profile)
     history.value = getHistory()
 
+    /* modifcado */
     if (dashboard.value?.profile) {
-      profileStore.setProfile(dashboard.value.profile)
+      profileStore.setProfile({
+        ...dashboard.value.profile,
+        totalGames: dashboard.value.library.totalGames,
+        totalHours: dashboard.value.stats.totalHours
+      })
     }
   } catch (error) {
     console.error(error)

@@ -3,12 +3,7 @@ const model = defineModel()
 </script>
 
 <template>
-  <input
-    v-model="model"
-    class="app-input"
-    type="text"
-    placeholder="Steam ID o URL del perfil"
-  />
+  <input v-model="model" class="app-input" type="text" placeholder="Steam ID o URL del perfil" />
 </template>
 
 <style scoped>
