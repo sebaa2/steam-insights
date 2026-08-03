@@ -4,9 +4,10 @@
       <div class="loader-card">
         <div class="spinner"></div>
 
-        <h2>Buscando perfil...</h2>
-
-        <p>Obteniendo información desde Steam</p>
+        <slot>
+          <h2>Buscando perfil...</h2>
+          <p>Obteniendo información desde Steam</p>
+        </slot>
       </div>
     </div>
   </Transition>
@@ -63,7 +64,7 @@ defineProps({
 
   border-radius: 50%;
 
-  border: 6px solid rgba(255,255,255,.15);
+  border: 6px solid rgba(255, 255, 255, .15);
   border-top: 6px solid #66c0f4;
 
   animation: spin .9s linear infinite;

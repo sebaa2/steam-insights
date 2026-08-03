@@ -13,6 +13,7 @@
   "dependencies": {
     "@primeuix/themes": "^3.0.0",
     "@primevue/forms": "^5.0.0",
+    "@vueuse/core": "^14.4.0",
     "apexcharts": "^6.6.1",
     "axios": "^1.18.1",
     "pinia": "^4.0.2",

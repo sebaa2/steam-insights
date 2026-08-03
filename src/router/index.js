@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
-import GamesView from '../views/GamesView.vue'
+import GamesView from '@/views/GamesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +28,11 @@ const router = createRouter({
       name: 'games-with-id',
       component: GamesView,
       props: true, // Permite pasar el steamId como prop
+    },
+    {
+      path: '/achievements/:appId',
+      name: 'achievements',
+      component: () => import('@/views/AchievementsView.vue'),
     },
     {
       path: '/:pathMatch(.*)*',

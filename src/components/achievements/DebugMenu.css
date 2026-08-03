@@ -1,0 +1,236 @@
+/* components/achievements/DebugMenu.css */
+
+.debug-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.debug-menu {
+    background: #1a2a3a;
+    border: 1px solid #2a3f52;
+    border-radius: 16px;
+    padding: 1.5rem;
+    min-width: 400px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    animation: zoomIn 0.3s ease;
+}
+
+.debug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #2a3f52;
+}
+
+.debug-title {
+    color: #66c0f4;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.debug-close {
+    background: transparent;
+    border: none;
+    color: #8b9aab;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0 0.5rem;
+}
+
+.debug-close:hover {
+    color: #e0e0e0;
+    transform: rotate(90deg);
+}
+
+.debug-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.debug-section {
+    background: #12202a;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #1a2a3a;
+}
+
+.debug-section h4 {
+    color: #8b9aab;
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.debug-info p {
+    margin: 0.3rem 0;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+}
+
+.debug-info strong {
+    color: #8b9aab;
+}
+
+.debug-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.debug-btn {
+    background: #2a3f52;
+    color: #e0e0e0;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+    flex: 1;
+    min-width: 100px;
+}
+
+.debug-btn:hover {
+    background: #3a5a6a;
+    transform: translateY(-2px);
+}
+
+.debug-btn:active {
+    transform: translateY(0);
+}
+
+.debug-raw details {
+    cursor: pointer;
+}
+
+.debug-raw summary {
+    color: #66c0f4;
+    font-weight: 500;
+}
+
+.debug-raw pre {
+    background: #0a1a2a;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.7rem;
+    color: #8b9aab;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.debug-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #1a2a3a;
+}
+
+.stat-label {
+    color: #8b9aab;
+    font-size: 0.85rem;
+}
+
+.stat-value {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.debug-footer {
+    text-align: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid #2a3f52;
+}
+
+.debug-version {
+    color: #4a5a6a;
+    font-size: 0.7rem;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Scrollbar personalizado */
+.debug-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.debug-menu::-webkit-scrollbar-track {
+    background: #1a2a3a;
+    border-radius: 3px;
+}
+
+.debug-menu::-webkit-scrollbar-thumb {
+    background: #2a3f52;
+    border-radius: 3px;
+}
+
+.debug-menu::-webkit-scrollbar-thumb:hover {
+    background: #3a5a6a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .debug-menu {
+        min-width: 90vw;
+        max-width: 95vw;
+        padding: 1rem;
+    }
+
+    .debug-actions {
+        flex-direction: column;
+    }
+
+    .debug-btn {
+        min-width: auto;
+    }
+
+    .debug-stats {
+        grid-template-columns: 1fr;
+    }
+}

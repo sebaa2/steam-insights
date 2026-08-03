@@ -1,25 +1,32 @@
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 
-const router = useRouter()
-
+// --- Props ---
 const props = defineProps({
   games: {
     type: Array,
     required: true,
+    default: () => []
   },
   title: {
     type: String,
     default: 'Top juegos'
   },
-  limit: {
+  maxGames: {
     type: Number,
     default: null
   },
   showViewAllButton: {
     type: Boolean,
     default: false
+  },
+  showRank: {
+    type: Boolean,
+    default: true
+  },
+  showProgress: {
+    type: Boolean,
+    default: true
   },
   steamId: {
     type: String,
@@ -28,18 +35,27 @@ const props = defineProps({
   totalGames: {
     type: Number,
     default: null
+  },
+  emptyMessage: {
+    type: String,
+    default: 'No hay juegos para mostrar'
   }
 })
 
-// Ordenar juegos por horas jugadas (mayor a menor)
-const displayedGames = computed(() => {
-  const sortedGames = [...props.games].sort((a, b) => b.hoursPlayed - a.hoursPlayed)
+// --- Emits ---
+const emit = defineEmits(['view-all', 'game-click'])
 
-  if (props.limit && sortedGames.length > props.limit) {
-    return sortedGames.slice(0, props.limit)
+// --- Computed ---
+const displayedGames = computed(() => {
+  if (!props.games || !props.games.length) return []
+
+  let sorted = [...props.games].sort((a, b) => b.hoursPlayed - a.hoursPlayed)
+
+  if (props.maxGames && sorted.length > props.maxGames) {
+    return sorted.slice(0, props.maxGames)
   }
 
-  return sortedGames
+  return sorted
 })
 
 const hasMoreGames = computed(() => {
@@ -49,8 +65,8 @@ const hasMoreGames = computed(() => {
     return props.totalGames > props.games.length
   }
 
-  if (props.limit != null) {
-    return props.games.length > props.limit
+  if (props.maxGames != null) {
+    return props.games.length > props.maxGames
   }
 
   return false
@@ -61,11 +77,15 @@ const maxHours = computed(() => {
   return Math.max(...displayedGames.value.map(game => game.hoursPlayed))
 })
 
+// --- Métodos ---
 const getPercentage = (hours) => {
+  if (maxHours.value === 0) return 0
   return Math.round((hours / maxHours.value) * 100)
 }
 
 const formatHours = (hours) => {
+  if (hours === undefined || hours === null) return '0 h'
+
   if (hours >= 1000) {
     return `${(hours / 1000).toFixed(1)}k h`
   }
@@ -83,66 +103,84 @@ const handleImageError = (event) => {
   event.target.alt = 'Imagen no disponible'
 }
 
-const goToAllGames = () => {
-  if (props.steamId) {
-    router.push(`/games/${props.steamId}`)
-  } else {
-    const savedId = localStorage.getItem('steamId')
-    if (savedId) {
-      router.push(`/games/${savedId}`)
-    } else {
-      router.push('/games')
-    }
-  }
+// ✅ CORREGIDO: Verificar listeners correctamente
+const handleGameClick = (gameId) => {
+  // Emitir el evento primero
+  emit('game-click', gameId)
+
+  // Si el evento fue manejado por el padre, no abrimos Steam por defecto
+  // Nota: No podemos verificar si hay listeners directamente en Vue 3
+  // Usamos un enfoque diferente: el padre maneja o no el evento
 }
 
-const openGame = (gameId) => {
-  window.open(
-    `https://store.steampowered.com/app/${gameId}`,
-    '_blank'
-  )
+// ✅ CORREGIDO: Verificar listeners correctamente
+const handleViewAll = () => {
+  // Emitir el evento primero
+  emit('view-all')
+
+  // No hacemos nada más, el padre decide cómo manejar el evento
+}
+
+// También podemos exponer una función para abrir en Steam si es necesario
+const openInSteam = (gameId) => {
+  window.open(`https://store.steampowered.com/app/${gameId}`, '_blank')
 }
 </script>
 
 <template>
   <div class="games-list">
+    <!-- Header -->
     <div class="games-header">
       <h2>{{ title }}</h2>
       <div class="header-actions">
-        <span v-if="limit && totalGames" class="games-count">
-          Mostrando {{ games.length }} de {{ totalGames }}
+        <span v-if="maxGames && totalGames" class="games-count">
+          Mostrando {{ Math.min(games.length, maxGames) }} de {{ totalGames }}
         </span>
-        <button v-if="showViewAllButton && hasMoreGames" class="view-all-btn" @click="goToAllGames">
+        <button v-if="showViewAllButton && hasMoreGames" class="view-all-btn" @click="handleViewAll">
           Ver todos →
         </button>
       </div>
     </div>
 
+    <!-- Empty State -->
     <div v-if="!displayedGames.length" class="empty-state">
-      <p>No hay juegos para mostrar</p>
+      <p>{{ emptyMessage }}</p>
     </div>
 
-    <div v-for="(game, index) in displayedGames" :key="game.id" class="game-card clickable" @click="openGame(game.id)">
-      <div class="rank">
-        #{{ index + 1 }}
-      </div>
-
-      <img :src="game.image" :alt="game.name" class="game-image" @error="handleImageError" loading="lazy">
-
-      <div class="game-info">
-        <div class="game-name-row">
-          <h3 class="game-title">{{ game.name }}
-
-            <span class="external-link"> </span>
-          </h3>
-          <span class="game-hours">{{ formatHours(game.hoursPlayed) }}</span>
+    <!-- Games List -->
+    <div v-else class="games-container">
+      <div v-for="(game, index) in displayedGames" :key="game.id || index" class="game-card clickable"
+        @click="handleGameClick(game.id)">
+        <!-- Rank -->
+        <div v-if="showRank" class="rank">
+          #{{ index + 1 }}
         </div>
 
-        <div class="progress-container">
-          <div class="progress">
-            <div class="progress-fill" :style="{ width: getPercentage(game.hoursPlayed) + '%' }"></div>
+        <!-- Image -->
+        <img :src="game.image || '/images/placeholder-game.jpg'" :alt="game.name || 'Juego sin nombre'"
+          class="game-image" @error="handleImageError" loading="lazy" />
+
+        <!-- Info -->
+        <div class="game-info">
+          <div class="game-name-row">
+            <h3 class="game-title">{{ game.name || 'Sin nombre' }}</h3>
+            <span class="game-hours">{{ formatHours(game.hoursPlayed) }}</span>
           </div>
-          <span class="progress-label">{{ getPercentage(game.hoursPlayed) }}%</span>
+
+          <!-- Progress Bar -->
+          <div v-if="showProgress" class="progress-container">
+            <div class="progress">
+              <div class="progress-fill" :style="{ width: getPercentage(game.hoursPlayed) + '%' }"></div>
+            </div>
+            <span class="progress-label">{{ getPercentage(game.hoursPlayed) }}%</span>
+          </div>
+
+          <!-- Additional Info -->
+          <div v-if="game.lastPlayed" class="game-meta">
+            <span class="meta-item">
+              Última vez: {{ new Date(game.lastPlayed).toLocaleDateString() }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -153,23 +191,25 @@ const openGame = (gameId) => {
 .games-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   width: 100%;
 }
 
+/* Header */
 .games-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .games-header h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
+  color: var(--steam-text);
 }
 
 .header-actions {
@@ -205,6 +245,7 @@ const openGame = (gameId) => {
   transform: translateY(0);
 }
 
+/* Empty State */
 .empty-state {
   padding: 2rem;
   text-align: center;
@@ -213,6 +254,14 @@ const openGame = (gameId) => {
   border-radius: 12px;
 }
 
+/* Games Container */
+.games-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Game Card */
 .game-card {
   display: flex;
   align-items: center;
@@ -220,7 +269,7 @@ const openGame = (gameId) => {
   padding: 1rem;
   background: var(--steam-surface);
   border-radius: 12px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   border: 1px solid transparent;
   cursor: pointer;
 }
@@ -231,6 +280,26 @@ const openGame = (gameId) => {
   border-color: #1a9fff33;
 }
 
+.game-card:active {
+  transform: scale(0.99);
+}
+
+/* Rank */
+.rank {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #1b2838;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  color: #66c0f4;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+/* Image */
 .game-image {
   width: 180px;
   min-height: 80px;
@@ -240,11 +309,12 @@ const openGame = (gameId) => {
   flex-shrink: 0;
 }
 
+/* Info */
 .game-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   min-width: 0;
 }
 
@@ -257,7 +327,7 @@ const openGame = (gameId) => {
 
 .game-title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -267,12 +337,13 @@ const openGame = (gameId) => {
 
 .game-hours {
   color: var(--steam-text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
+/* Progress */
 .progress-container {
   display: flex;
   align-items: center;
@@ -281,7 +352,7 @@ const openGame = (gameId) => {
 
 .progress {
   flex: 1;
-  height: 8px;
+  height: 6px;
   background: #23384b;
   border-radius: 999px;
   overflow: hidden;
@@ -304,12 +375,32 @@ const openGame = (gameId) => {
   flex-shrink: 0;
 }
 
+/* Meta */
+.game-meta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.meta-item {
+  font-size: 0.75rem;
+  color: var(--steam-text-secondary);
+  opacity: 0.7;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .game-card {
     flex-direction: column;
     align-items: stretch;
     padding: 0.75rem;
+  }
+
+  .rank {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+    align-self: flex-start;
   }
 
   .game-image {
@@ -326,7 +417,7 @@ const openGame = (gameId) => {
 
   .game-title {
     white-space: normal;
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .games-header {
@@ -343,53 +434,30 @@ const openGame = (gameId) => {
 @media (max-width: 480px) {
   .game-card {
     padding: 0.5rem;
+    gap: 0.75rem;
   }
 
   .game-title {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .game-hours {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .view-all-btn {
     padding: 0.4rem 1rem;
     font-size: 0.8rem;
   }
-}
 
-.rank {
+  .games-header h2 {
+    font-size: 1.2rem;
+  }
 
-  width: 42px;
-
-  height: 42px;
-
-  border-radius: 50%;
-
-  background: #1b2838;
-
-  display: flex;
-
-  justify-content: center;
-
-  align-items: center;
-
-  font-weight: 700;
-
-  color: #66c0f4;
-
-  flex-shrink: 0;
-
-}
-
-.external-link {
-  font-size: .8rem;
-
-  color: #66c0f4;
-
-  margin-left: .35rem;
-
-  opacity: .75;
+  .rank {
+    width: 30px;
+    height: 30px;
+    font-size: 0.7rem;
+  }
 }
 </style>
