@@ -16,6 +16,7 @@ const openSteam = () => {
 }
 
 const openAchievements = () => {
+    // ✅ Emitir el juego completo, no solo el ID
     emit('achievements', props.game)
 }
 </script>

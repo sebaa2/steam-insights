@@ -39,15 +39,17 @@ const {
   goToPage
 } = usePagination(filteredGames, 20)
 
-// Función para manejar la navegación a logros
+// ✅ Función para manejar la navegación a logros
 const handleAchievements = (game) => {
   console.log('🏆 Abriendo logros para:', game.name, 'App ID:', game.id)
+
+  // ✅ Pasar el nombre del juego como query param o state
   router.push({
     name: 'achievements',
-    params: { appId: game.id }
+    params: { appId: game.id },
+    query: { gameName: game.name } // ✅ Pasar el nombre en la URL
   })
 }
-
 </script>
 
 <template>

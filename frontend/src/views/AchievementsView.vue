@@ -1,29 +1,29 @@
 <script setup>
 import { useAchievements } from '@/composables/useAchievements'
 import LoadingOverlay from '@/components/common/LoadingOverlay.vue'
-import DebugPanel from '@/components/achievements/DebugPanel.vue'
 import AchievementsList from '@/components/achievements/AchievementsList.vue'
+import DebugMenu from '@/components/achievements/DebugMenu.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const {
     loading,
     error,
     achievementsData,
-    showDebug,
-    debugInfo,
     stats,
     isLoggedIn,
     username,
     appId,
-    toggleDebug,
-    retry
+    gameDisplayName,
+    showDebug,
+    retry,
+    activateDebug,
+    deactivateDebug
 } = useAchievements()
 
 const goBack = () => router.back()
 const openSteamStore = () => window.open(`https://store.steampowered.com/app/${appId.value}`, '_blank')
-
-// Necesitamos el router para goBack
-import { useRouter } from 'vue-router'
-const router = useRouter()
 </script>
 
 <template>
@@ -35,21 +35,20 @@ const router = useRouter()
             <small style="color: #8b9aab; font-size: 0.85rem;">App ID: {{ appId }}</small>
         </LoadingOverlay>
 
+        <!-- Debug Menu -->
+        <DebugMenu :show="showDebug" :app-id="appId" :game-name="gameDisplayName" :username="username" :stats="stats"
+            :achievements-data="achievementsData" @close="deactivateDebug" @reload="retry" />
+
         <!-- Header -->
         <div class="header">
             <button @click="goBack" class="back-button">← Volver</button>
             <h1>🏆 Logros del juego</h1>
             <div class="header-actions">
-                <button @click="retry" class="reload-btn" :disabled="loading">⟳ Recargar</button>
-                <button @click="toggleDebug" class="debug-toggle-btn">
-                    {{ showDebug ? '🔍 Ocultar Debug' : '🔍 Debug' }}
+                <button @click="retry" class="reload-btn" :disabled="loading" :class="{ 'spinning': loading }">
+                    ⟳ Recargar
                 </button>
             </div>
         </div>
-
-        <!-- Debug Panel -->
-        <DebugPanel :show="showDebug" :loading="loading" :error="error" :app-id="appId" :debug-info="debugInfo"
-            :achievements-data="achievementsData" :is-logged-in="isLoggedIn" :username="username" :stats="stats" />
 
         <!-- Estado: Error -->
         <div v-if="error && !loading" class="error-state">
@@ -68,9 +67,11 @@ const router = useRouter()
         </div>
 
         <!-- Estado: Con logros -->
-        <AchievementsList v-else-if="!loading && achievementsData?.achievements?.length > 0"
-            :achievements-data="achievementsData" :stats="stats" :username="username" :is-logged-in="isLoggedIn"
-            @open-store="openSteamStore" />
+        <AchievementsList v-else-if="!loading && achievementsData?.achievements?.length > 0" :achievements-data="{
+            ...achievementsData,
+            gameName: gameDisplayName
+        }" :stats="stats" :username="username" :is-logged-in="isLoggedIn" @open-store="openSteamStore"
+            @debug-click="activateDebug" />
 
         <!-- Estado: Datos inesperados -->
         <div v-else-if="!loading && !error && !achievementsData" class="empty-state">
@@ -139,9 +140,12 @@ const router = useRouter()
     font-weight: 600;
 }
 
-.reload-btn:hover:not(:disabled) {
+.reload-btn.spinning {
+    animation: spin 1s linear infinite;
+}
+
+.reload-btn:hover:not(:disabled):not(.spinning) {
     background: #3a5a6a;
-    transform: rotate(90deg);
 }
 
 .reload-btn:disabled {
@@ -149,19 +153,14 @@ const router = useRouter()
     cursor: not-allowed;
 }
 
-.debug-toggle-btn {
-    background: #2a3f52;
-    color: #e0e0e0;
-    border: none;
-    padding: 0.7rem 1.2rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-weight: 600;
-}
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
 
-.debug-toggle-btn:hover {
-    background: #3a5a6a;
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .error-state {

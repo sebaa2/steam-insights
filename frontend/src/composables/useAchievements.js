@@ -7,12 +7,16 @@ import { sessionService } from '@/services/sessionService'
 export function useAchievements() {
   const route = useRoute()
   const appId = computed(() => route.params.appId)
+  const gameNameFromQuery = computed(() => route.query.gameName || null)
 
   // Estado
   const loading = ref(false)
   const error = ref(null)
   const achievementsData = ref(null)
+
+  // Debug controlado por Konami Code
   const showDebug = ref(false)
+
   const debugInfo = ref({
     status: 'Inicializando...',
     lastRequest: null,
@@ -39,9 +43,16 @@ export function useAchievements() {
   const isLoggedIn = computed(() => sessionService.isLoggedIn())
   const username = computed(() => sessionService.getUsername())
 
-  const toggleDebug = () => {
-    showDebug.value = !showDebug.value
-  }
+  // Computed para el nombre del juego
+  const gameDisplayName = computed(() => {
+    if (gameNameFromQuery.value) {
+      return gameNameFromQuery.value
+    }
+    if (achievementsData.value?.gameName && achievementsData.value.gameName !== '') {
+      return achievementsData.value.gameName
+    }
+    return `Juego ${appId.value}`
+  })
 
   const fetchAchievements = async () => {
     if (loading.value) return
@@ -88,12 +99,25 @@ export function useAchievements() {
     fetchAchievements()
   }
 
+  // ✅ Función para activar debug (ahora la controla KonamiActivator)
+  const activateDebug = () => {
+    showDebug.value = true
+    console.log('🔍 Panel de debug activado')
+  }
+
+  // ✅ Función para desactivar debug
+  const deactivateDebug = () => {
+    showDebug.value = false
+  }
+
   // Watch para detectar cambios en la ruta
   watch(
     () => route.params.appId,
     (newAppId) => {
       if (newAppId) {
         fetchAchievements()
+        // Resetear el debug al cambiar de juego
+        showDebug.value = false
       }
     },
     { immediate: true },
@@ -117,9 +141,11 @@ export function useAchievements() {
     isLoggedIn,
     username,
     appId,
+    gameDisplayName,
     // Métodos
-    toggleDebug,
     fetchAchievements,
     retry,
+    activateDebug,
+    deactivateDebug,
   }
 }

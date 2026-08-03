@@ -15,8 +15,12 @@ const openGame = () => {
     emit('open', props.game.id)
 }
 
+// ✅ Pasar el nombre del juego junto con el ID
 const openAchievements = (game) => {
-    emit('achievements', game)
+    emit('achievements', {
+        id: game.id,
+        name: game.name // ✅ Enviar el nombre
+    })
 }
 
 const formatHours = (hours) => {
