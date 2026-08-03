@@ -20,3 +20,17 @@ Thumbs.db
 
 # Logs
 *.log
+
+
+# DEBUG y OTRAS COSAS
+
+# Archivos de debug de Vue
+frontend/src/components/achievements/DebugMenu.vue
+frontend/src/components/achievements/DebugMenu.dev.vue
+frontend/src/components/achievements/DebugMenu.*.vue
+frontend/src/components/achievements/*.debug.vue
+
+# Archivos de debug de cualquier lugar
+**/DebugMenu.vue
+**/*.debug.vue
+**/*.debug.js
