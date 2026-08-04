@@ -19,15 +19,20 @@ const router = createRouter({
       component: ProfileView,
     },
     {
-      path: '/games', // 👈 Ruta para ver todos los juegos
+      path: '/results', // 👈 Ruta simple sin query params
+      name: 'results',
+      component: () => import('@/views/ResultsView.vue'),
+    },
+    {
+      path: '/games',
       name: 'games',
       component: GamesView,
     },
     {
-      path: '/games/:steamId', // 👈 Ruta con parámetro opcional
+      path: '/games/:steamId',
       name: 'games-with-id',
       component: GamesView,
-      props: true, // Permite pasar el steamId como prop
+      props: true,
     },
     {
       path: '/achievements/:appId',

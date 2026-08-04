@@ -4,11 +4,15 @@ defineProps({
         type: String,
         required: true,
     },
+    disabled: {
+        type: Boolean,
+        default: false,
+    }
 })
 </script>
 
 <template>
-    <button class="app-button">
+    <button class="app-button" :disabled="disabled">
         {{ label }}
     </button>
 </template>
@@ -24,9 +28,15 @@ defineProps({
     font-weight: 600;
     cursor: pointer;
     transition: 0.2s;
+    white-space: nowrap;
 }
 
-.app-button:hover {
+.app-button:hover:not(:disabled) {
     background: var(--steam-primary-hover);
+}
+
+.app-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 </style>

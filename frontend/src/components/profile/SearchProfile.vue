@@ -1,29 +1,25 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-
 import AppButton from '@/components/common/AppButton.vue'
 import AppInput from '@/components/common/AppInput.vue'
-import ProfileCard from '@/components/profile/ProfileCard.vue'
-import StatsGrid from '@/components/stats/StatsGrid.vue'
-import GamesList from '@/components/games/GamesList.vue'
 import HistoryList from '@/components/history/HistoryList.vue'
+import LoadingOverlay from '@/components/common/LoadingOverlay.vue' // 👈 Importar
 import { getHistory, saveHistory } from '@/services/historyService'
-import LoadingOverlay from '@/components/common/LoadingOverlay.vue'
-import DashboardCharts from '@/components/dashboard/DashboardCharts.vue'
+import { getDashboard } from '@/services/steamService'
 import { useProfileStore } from '@/stores/profileStore'
 
-import { getDashboard } from '@/services/steamService'
-
 const router = useRouter()
-const search = ref('')
-const dashboard = ref(null)
-const loading = ref(false)
-const history = ref(getHistory())
 const profileStore = useProfileStore()
+const search = ref('')
+const history = ref(getHistory())
 const errorMessage = ref('')
+const isSearching = ref(false)
 
 const handleSearch = async (query) => {
+  // Evitar búsquedas múltiples
+  if (isSearching.value) return
+  
   const value = (query ?? search.value).trim()
 
   if (!value) {
@@ -31,61 +27,74 @@ const handleSearch = async (query) => {
     return
   }
 
-  loading.value = true
+  // Resetear estados
   errorMessage.value = ''
+  isSearching.value = true
+  profileStore.setLoading(true) // 👈 Activar loading en store
+  profileStore.clearData()
 
   try {
-    dashboard.value = await getDashboard(value)
-
-    saveHistory(dashboard.value.profile)
-    history.value = getHistory()
-
-    // Sincroniza el store global con los datos combinados del dashboard
-    if (dashboard.value?.profile) {
-      profileStore.setProfile({
-        ...dashboard.value.profile,
-        totalGames: dashboard.value.library?.totalGames,
-        totalHours: dashboard.value.stats?.totalHours
-      })
+    console.log('🔍 Buscando perfil:', value)
+    const result = await getDashboard(value)
+    console.log('✅ Datos obtenidos:', result)
+    
+    if (result?.profile?.steamId) {
+      // Guardar en historial
+      saveHistory(result.profile)
+      history.value = getHistory()
+      
+      // Guardar en el store
+      profileStore.setDashboardData(result)
+      
+      // Navegar a resultados
+      console.log('🚀 Navegando a /results')
+      await router.push('/results')
+    } else {
+      errorMessage.value = 'No se encontró el perfil'
+      profileStore.setLoading(false)
+      isSearching.value = false
     }
   } catch (error) {
-    console.error(error)
-    dashboard.value = null
+    console.error('❌ Error en búsqueda:', error)
     errorMessage.value = 'No se pudo encontrar el perfil. Verifica el SteamID o la URL e intenta nuevamente.'
-  } finally {
-    loading.value = false
+    profileStore.setLoading(false)
+    isSearching.value = false
   }
 }
 
-// Navegar a la vista completa de juegos
-const goToAllGames = (steamId) => {
-  if (steamId) {
-    router.push(`/games/${steamId}`)
-  }
+const handleHistorySelect = (steamId) => {
+  if (isSearching.value) return
+  search.value = steamId
+  handleSearch(steamId)
 }
+
+onMounted(() => {
+  history.value = getHistory()
+})
 </script>
 
 <template>
-  <LoadingOverlay :show="loading" />
-
   <div class="search-card">
-    <AppInput v-model="search" placeholder="Ingresa un SteamID, URL personalizada o perfil"
-      @keyup.enter="handleSearch(search)" />
-    <AppButton label="Buscar perfil" :disabled="loading" @click="handleSearch(search)" />
+    <!-- 👇 LoadingOverlay cuando se está buscando -->
+    <LoadingOverlay :show="isSearching" />
 
-    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <AppInput 
+          v-model="search" 
+          placeholder="Ingresa un SteamID, URL personalizada o perfil"
+          @keyup.enter="handleSearch(search)" 
+        />
+        <AppButton 
+          label="Buscar perfil" 
+          :disabled="isSearching" 
+          @click="handleSearch(search)" 
+        />
+      </div>
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+    </div>
 
-    <ProfileCard v-if="dashboard?.profile" :profile="dashboard.profile" />
-    <StatsGrid v-if="dashboard?.library && dashboard?.stats" :library="dashboard.library" :stats="dashboard.stats" />
-    <DashboardCharts v-if="dashboard?.stats" :stats="dashboard.stats" />
-
-    <section v-if="dashboard?.library" class="library-section">
-      <GamesList :games="dashboard.stats?.topFive || []" :total-games="dashboard.library.totalGames"
-        title="Top 5 juegos más jugados" :show-view-all-button="true" :steam-id="dashboard.profile?.steamId"
-        @view-all="goToAllGames(dashboard.profile?.steamId)" />
-    </section>
-
-    <HistoryList :history="history" @select="handleSearch" />
+    <HistoryList :history="history" @select="handleHistorySelect" />
   </div>
 </template>
 
@@ -99,16 +108,26 @@ const goToAllGames = (steamId) => {
   margin: 0 auto;
 }
 
-.library-section {
-  margin-top: 2rem;
+.search-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
+}
+
+.search-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .error-message {
   color: var(--steam-error, #ff4d4f);
   font-size: 0.9rem;
   margin: 0;
+}
+
+@media (max-width: 768px) {
+  .search-input-wrapper {
+    flex-direction: column;
+  }
 }
 </style>
