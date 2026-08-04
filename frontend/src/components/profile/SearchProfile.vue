@@ -21,9 +21,18 @@ const dashboard = ref(null)
 const loading = ref(false)
 const history = ref(getHistory())
 const profileStore = useProfileStore()
+const errorMessage = ref('')
 
-const handleSearch = async (value = search.value) => {
+const handleSearch = async (query) => {
+  const value = (query ?? search.value).trim()
+
+  if (!value) {
+    errorMessage.value = 'Ingresa un SteamID, URL personalizada o perfil'
+    return
+  }
+
   loading.value = true
+  errorMessage.value = ''
 
   try {
     dashboard.value = await getDashboard(value)
@@ -31,17 +40,18 @@ const handleSearch = async (value = search.value) => {
     saveHistory(dashboard.value.profile)
     history.value = getHistory()
 
-    /* modifcado */
+    // Sincroniza el store global con los datos combinados del dashboard
     if (dashboard.value?.profile) {
       profileStore.setProfile({
         ...dashboard.value.profile,
-        totalGames: dashboard.value.library.totalGames,
-        totalHours: dashboard.value.stats.totalHours
+        totalGames: dashboard.value.library?.totalGames,
+        totalHours: dashboard.value.stats?.totalHours
       })
     }
   } catch (error) {
     console.error(error)
     dashboard.value = null
+    errorMessage.value = 'No se pudo encontrar el perfil. Verifica el SteamID o la URL e intenta nuevamente.'
   } finally {
     loading.value = false
   }
@@ -59,15 +69,18 @@ const goToAllGames = (steamId) => {
   <LoadingOverlay :show="loading" />
 
   <div class="search-card">
-    <AppInput v-model="search" placeholder="Ingresa un SteamID, URL personalizada o perfil" />
-    <AppButton label="Buscar perfil" :disabled="loading" @click="handleSearch()" />
+    <AppInput v-model="search" placeholder="Ingresa un SteamID, URL personalizada o perfil"
+      @keyup.enter="handleSearch(search)" />
+    <AppButton label="Buscar perfil" :disabled="loading" @click="handleSearch(search)" />
+
+    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
     <ProfileCard v-if="dashboard?.profile" :profile="dashboard.profile" />
     <StatsGrid v-if="dashboard?.library && dashboard?.stats" :library="dashboard.library" :stats="dashboard.stats" />
     <DashboardCharts v-if="dashboard?.stats" :stats="dashboard.stats" />
 
     <section v-if="dashboard?.library" class="library-section">
-      <GamesList :games="dashboard.stats.topFive || []" :total-games="dashboard.library.totalGames"
+      <GamesList :games="dashboard.stats?.topFive || []" :total-games="dashboard.library.totalGames"
         title="Top 5 juegos más jugados" :show-view-all-button="true" :steam-id="dashboard.profile?.steamId"
         @view-all="goToAllGames(dashboard.profile?.steamId)" />
     </section>
@@ -91,5 +104,11 @@ const goToAllGames = (steamId) => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.error-message {
+  color: var(--steam-error, #ff4d4f);
+  font-size: 0.9rem;
+  margin: 0;
 }
 </style>
